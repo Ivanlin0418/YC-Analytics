@@ -1,0 +1,44 @@
+{
+    "companies": 
+    {
+        "topic": "companies_topic",
+        "file": "datasets/companies.csv"
+    },
+    "badges": 
+    {
+        "topic": "badges_topic",
+        "file": "datasets/badges.csv"
+    },
+    "founders": 
+    {
+        "topic": "founders_topic",
+        "file": "datasets/founders.csv"
+    },
+    "industries": 
+    {
+        "topic": "industries_topic",
+        "file": "datasets/industries.csv"
+    },
+    "prior_companies":
+    {
+        "topic": "prior_companies_topic",
+        "file": "datasets/prior_companies.csv"
+    },
+    "regions":
+    {
+        "topic": "regions_topic",
+        "file": "datasets/regions.csv"
+    },
+
+    "schools":
+    {
+        "topic": "schools_topic",
+        "file": "datasets/schools.csv"
+    },
+    "tags":
+    {
+        "topic": "tags_topic",
+        "file": "datasets/tags.csv"
+    }
+
+}
