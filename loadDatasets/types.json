@@ -2,43 +2,51 @@
     "companies": 
     {
         "topic": "companies_topic",
-        "file": "datasets/companies.csv"
+        "file": "datasets/companies.csv",
+        "schema": "COMPANIES_SCHEMA"
     },
     "badges": 
     {
         "topic": "badges_topic",
-        "file": "datasets/badges.csv"
+        "file": "datasets/badges.csv",
+        "schema": "BADGES_SCHEMA"
     },
     "founders": 
     {
         "topic": "founders_topic",
-        "file": "datasets/founders.csv"
+        "file": "datasets/founders.csv",
+        "schema": "FOUNDERS_SCHEMA"
     },
     "industries": 
     {
         "topic": "industries_topic",
-        "file": "datasets/industries.csv"
+        "file": "datasets/industries.csv",
+        "schema": "INDUSTRIES_SCHEMA"
     },
     "prior_companies":
     {
         "topic": "prior_companies_topic",
-        "file": "datasets/prior_companies.csv"
+        "file": "datasets/prior_companies.csv",
+        "schema": "PRIOR_COMPANIES_SCHEMA"
     },
     "regions":
     {
         "topic": "regions_topic",
-        "file": "datasets/regions.csv"
+        "file": "datasets/regions.csv",
+        "schema": "REGIONS_SCHEMA"
     },
 
     "schools":
     {
         "topic": "schools_topic",
-        "file": "datasets/schools.csv"
+        "file": "datasets/schools.csv",
+        "schema": "SCHOOLS_SCHEMA"
     },
     "tags":
     {
         "topic": "tags_topic",
-        "file": "datasets/tags.csv"
+        "file": "datasets/tags.csv",
+        "schema": "TAGS_SCHEMA"
     }
 
 }

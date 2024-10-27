@@ -1,0 +1,4 @@
+pandas
+confluent_kafka
+pyspark
+plotly

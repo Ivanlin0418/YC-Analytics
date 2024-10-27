@@ -1,4 +1,5 @@
 import pandas as pd
+import csv
 from confluent_kafka import Producer, Consumer
 import json
 from loadDatasets.dataset import Dataset
@@ -29,23 +30,46 @@ class DatabaseLoader:
         try:
             with open(JSON_PATH, 'r') as file:
                 data = json.load(file)
-                
                 file_path = data[dataset_name]["file"]
                 topic = data[dataset_name]["topic"]
                 
                 print(f"Loading data from {file_path} for topic {topic}")
-                df = pd.read_csv(file_path)
+                
+                # Automatically detect delimiter
+                with open(file_path, 'r') as csvfile:
+                    sniffer = csv.Sniffer()
+                    sample = csvfile.read(1024)
+                    csvfile.seek(0)
+                    dialect = sniffer.sniff(sample)
+                    delimiter = dialect.delimiter
+                
+                # Read CSV with options to handle multiline fields
+                df = pd.read_csv(file_path, 
+                    delimiter=delimiter, 
+                    quotechar='"', 
+                    escapechar='\\', 
+                    skip_blank_lines=True, 
+                    engine='python')  # Use Python engine for multiline support
+                
+                # General data cleaning
+                df.dropna(how='all', inplace=True)  # Remove completely empty rows
+                df = df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)  # Trim whitespace
+                df.drop_duplicates(inplace=True)  # Remove duplicate rows
+                
+                # Replace NaN with 0
+                df.fillna(0, inplace=True)
+                
+
                 
                 # Instantiate the Dataset class
                 dataset = Dataset(name=dataset_name, df=df)
-            
-                self.send_to_kafka(topic, dataset.get_df()) # send the dataframe to kafka
+                self.send_to_kafka(topic, dataset.get_df())  # send the dataframe to kafka
         except KeyError:
             print(f"Dataset name '{dataset_name}' not found in types.json")
         except Exception as e:
             print(f"An error occurred: {e}")
 
-#-------------DATASET LOADERS-------------
+    # Dataset Loaders
     def load_companies(self):
         self.load_data("companies")
     
@@ -70,10 +94,7 @@ class DatabaseLoader:
     def load_tags(self):
         self.load_data("tags")
     
-#-------------END OF DATASET LOADERS-------------
-
-
-#-------------KAFKA SENDER-------------
+    # Kafka Sender
     def send_to_kafka(self, topic: str, df: pd.DataFrame):
         for _, row in df.iterrows():
             row_dict = row.to_dict()

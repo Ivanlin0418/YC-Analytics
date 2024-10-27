@@ -9,6 +9,6 @@ class SparkSessionSingleton:
             cls._instance = SparkSession.builder \
                 .appName(app_name) \
                 .master(master) \
+                .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.0") \
                 .getOrCreate()
         return cls._instance
-

@@ -1,6 +1,5 @@
 import pandas as pd
 from confluent_kafka import Producer
-import json
 
 class Dataset:
     def __init__(self, name: str, df: pd.DataFrame):

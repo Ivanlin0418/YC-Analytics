@@ -11,7 +11,6 @@ This project analyzes YCombinator companies to identify common characteristics a
 - [Configuration](#configuration)
 - [Dataset Source](#dataset-source)
 
-
 ## Project Description
 
 The YCombinator Companies Analysis project aims to provide insights into the characteristics of companies that have gone through the YCombinator accelerator. The project uses datasets related to companies, founders, industries, and more, and processes data using Kafka for real-time data streaming and analysis.
@@ -30,30 +29,36 @@ The YCombinator Companies Analysis project aims to provide insights into the cha
 - Python 3.x
 - Apache Kafka
 - Zookeeper (for Kafka)
-
+- Docker
+- Java Development Kit (JDK) 8 or later
 ### Setup
 
-1. Clone the repository:
+1. **Clone the repository:**
 
    ```bash
    git clone https://github.com/yourusername/YCombinator-Analysis.git
    cd YCombinator-Analysis
    ```
 
-2. Create and activate a virtual environment:
+2. **Create and activate a virtual environment:**
 
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
    ```
 
-3. Install the required Python packages:
+3. **Install the required Python packages:**
 
    ```bash
    pip install -r requirements.txt
    ```
 
-4. Start Zookeeper and Kafka:
+4. **Install Java:**
+
+   - **Windows**: Download and install the JDK from the [Oracle website](https://www.oracle.com/java/technologies/javase-jdk11-downloads.html) or [OpenJDK](https://openjdk.java.net/). Set the `JAVA_HOME` environment variable to the JDK installation path.
+   - **macOS/Linux**: Use a package manager like `brew` or `apt` to install OpenJDK. Set the `JAVA_HOME` environment variable in your shell profile.
+
+5. **Start Zookeeper and Kafka:**
 
    ```bash
    # Start Zookeeper
@@ -65,7 +70,7 @@ The YCombinator Companies Analysis project aims to provide insights into the cha
 
 ## Usage
 
-1. Load datasets and start the analysis:
+1. **Load datasets and start the analysis:**
 
    ```bash
    python main.py
@@ -80,4 +85,5 @@ The YCombinator Companies Analysis project aims to provide insights into the cha
 
 ## Dataset Source
 
-The datasets used in this project are sourced from Kaggle: [YCombinator All Funded Companies Dataset](https://www.kaggle.com/datasets/sashakorovkina/ycombinator-all-funded-companies-dataset/data).
+- Ensure your datasets are correctly formatted and placed in the specified directory for processing.
+

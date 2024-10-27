@@ -12,7 +12,6 @@ class KafkaProducerSingleton:
     def _initialize(self):
         self.producer = Producer({'bootstrap.servers': 'localhost:9092'})
 
-
     def get_producer(self):
         return self.producer
 
@@ -21,8 +20,6 @@ class KafkaProducerSingleton:
             print(f'Message delivery failed: {err}')
         else:
             print(f'Message delivered to {msg.topic()} [{msg.partition()}]')
-
-    
 
 class KafkaConsumerSingleton:
     _instance = None
