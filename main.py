@@ -5,32 +5,12 @@ from loadDatasets.loadDatasets import DatabaseLoader
 from dataAnalytics import DataAnalytics
 
 
-
-def testDataset():
-    loader = DatabaseLoader()
-    loader.load_companies()
-    dataAnalytics = DataAnalytics()
-    loader.send_to_kafka("companies_topic", loader.get_companies())
-    print(dataAnalytics.getMostSuccessfulCompaniesFromKafka())
-
-
-
-
-
-
-
-
-
-
-
-
-
 def main():
     # Initialize the database loader
     loader = DatabaseLoader()
     loader.load_companies() 
     # loader.load_industries()
-    # loader.load_founders()
+    loader.load_founders()
     # loader.load_prior_companies()
     # loader.load_regions()
     # loader.load_schools()
@@ -40,7 +20,8 @@ def main():
     # print (dataAnalytics.getMostSuccessfulCompaniesFromKafka())
 
     # print (dataAnalytics.getMostSuccessfulFoundersFromKafka())
-    print (dataAnalytics.getMostSuccessfulCompaniesFromKafka())
+    # print (dataAnalytics.getMostSuccessfulCompaniesFromKafka())
+    print (dataAnalytics.getMostSuccessFoundersAndTheirCompaniesFromKafka())
     # print (dataAnalytics.getMostSuccessfulCompaniesWithFoundersFromKafka())
 
 

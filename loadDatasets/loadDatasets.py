@@ -1,6 +1,5 @@
 import pandas as pd
 import csv
-from confluent_kafka import Producer, Consumer
 import json
 from loadDatasets.dataset import Dataset
 from kafka.kafkaSingleton import KafkaProducerSingleton
@@ -21,7 +20,7 @@ class DatabaseLoader:
         if err is not None:
             print(f'Message delivery failed: {err}')
         else:
-            print(f'Message delivered to {msg.topic()} [{msg.partition()}]')
+            return
 
     def load_data(self, dataset_name: str):
         """
@@ -49,7 +48,7 @@ class DatabaseLoader:
                     quotechar='"', 
                     escapechar='\\', 
                     skip_blank_lines=True, 
-                    engine='python')  # Use Python engine for multiline support
+                    engine='python')  
                 
                 # General data cleaning
                 df.dropna(how='all', inplace=True)  # Remove completely empty rows
