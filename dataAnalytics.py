@@ -49,159 +49,159 @@ class DataAnalytics:
 
 
     def subscribeToKafkaTopic(self, topic):
-        df = self.spark.readStream \
-            .format("kafka") \
-            .option("kafka.bootstrap.servers", "localhost:9092") \
-            .option("subscribe", f"{topic}") \
-            .option("startingOffsets", "earliest") \
-            .option("failOnDataLoss", "false")  \
-            .load() \
-            .selectExpr("CAST(value AS STRING) as json") \
-            .select(from_json(col("json"), SCHEMA[topic.upper()]).alias("data")) \
-            .select("data.*")
+        """
+        Subscribes to a Kafka topic and returns a DataFrame.
         
-        return df
-
-
+        @param topic: Name of the Kafka topic to subscribe to.
+        @return: DataFrame containing the data from the Kafka topic.
+        """
+        try:
+            df = self.spark.readStream \
+                .format("kafka") \
+                .option("kafka.bootstrap.servers", "localhost:9092") \
+                .option("subscribe", topic+"_topic") \
+                .option("startingOffsets", "earliest") \
+                .option("failOnDataLoss", "false") \
+                .load() \
+                .selectExpr("CAST(value AS STRING) as json") \
+                .select(from_json(col("json"), SCHEMA[topic.upper()]).alias("data")) \
+                .select("data.*")
+            return df
+        except Exception as e:
+            print(f"An error occurred while subscribing to the Kafka topic {topic}: {e}")
+            return None
+        
+    def getKafkaTopicList(self):
+        """
+        Returns a list of Kafka topics.
+        
+        @return: List of Kafka topics.
+        """
+        try:
+            topics = self.consumer.list_topics().topics
+            print (self.producer.list_topics().topics)
+            return list(topics.keys())
+        except Exception as e:
+            print(f"An error occurred while getting the list of Kafka topics: {e}")
+            return None
+        
 
     def getMostSuccessfulCompaniesFromKafka(self, top_n=10):
         """
-        Consumes messages from a Kafka topic and returns the top N most successful companies.
+        Consumes messages from a Kafka topic and returns the top N most successful companies by team size.
         
-        @param top_n: Number of top companies to return. Defaults to 5.
+        @param top_n: Number of top companies to return. Defaults to 10.
         @return: List of top N companies sorted by success metric.
         """
         spark = self.spark
 
         # Read companies data from Kafka as a streaming DataFrame
         companies_df = self.subscribeToKafkaTopic("companies")
+        if companies_df is None:
+            print("Failed to subscribe to the Kafka topic 'companies'.")
+            return None
 
         # Cast teamSize to integer
         companies_df = companies_df.withColumn("teamSize", companies_df["teamSize"].cast("int"))
 
-        query = companies_df.writeStream \
-            .format("parquet") \
-            .option("path", "/tmp/companies") \
-            .option("checkpointLocation", "/tmp/checkpoints/companies") \
-            .outputMode("append") \
-            .start()
-
-        # Wait for the streaming query to initialize
-        query.awaitTermination(10)
-
-        # Read the data back from the parquet sink
-        companies_df = spark.read.parquet("/tmp/companies")
-
-        # Create a temporary view
-        companies_df.createOrReplaceTempView("companies")
-
-        # filter to avoid SQL injection
-        filtered_df = companies_df.filter((col("status") == "Acquired") & (col("teamSize").isNotNull())) \
-                                  .select("name", col("teamSize").cast("int").alias("teamSize"), "batch")
+        # Filter acquired companies with non-null teamSize
+        filtered_df = companies_df.filter((col("status") == "Acquired") & (col("teamSize").isNotNull()))
 
         # Group by name, teamSize, and batch, then order by teamSize in descending order and limit the results
         result_df = filtered_df.groupBy("name", "teamSize", "batch") \
-                               .count() \
-                               .orderBy(col("teamSize").desc()) \
-                               .limit(top_n)
+                            .count() \
+                            .orderBy(col("teamSize").desc()) \
+                            .limit(top_n)
 
-        # Collect the result into a Pandas DataFrame
-        result_pd = result_df.toPandas()
+        # Write the result to an in-memory table (for testing purposes)
+        query = result_df.writeStream \
+            .format("memory") \
+            .queryName("top_companies") \
+            .outputMode("complete") \
+            .start()
 
-        # Plot the result using Plotly
-        fig = px.bar(result_pd, x='name', y='teamSize', title='Top N Most Successful Companies by Team Size')
+        query.awaitTermination(10)
+        sqlQuery = """SELECT * 
+                   FROM top_companies 
+                   ORDER BY teamSize DESC 
+                   LIMIT :top_n"""
+        result_static_df = spark.sql(sqlQuery, args={"top_n": top_n})
 
-        # Get the directory of the current script
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(script_dir, 'most_successful_companies.html')
 
-        # Save the plot to the same directory as the script
-        fig.write_html(file_path)
-        print(f"Plot saved to {file_path}")
+        result_pd = result_static_df.toPandas()
+
+        # Plot using Plotly
+        fig = px.bar(result_pd, x='name', y='teamSize', title=f'Top {top_n} Most Successful Companies by Team Size')
+        fig.show()
 
         # Stop the streaming query
         query.stop()
 
+        return result_pd
+
+    
     def getMostSuccessFoundersAndTheirCompaniesFromKafka(self, top_n=10):
+        """
+        Consumes messages from Kafka topics for companies and founders,
+        joins them, and returns the top N most successful founders and their companies.
+        
+        @param top_n: Number of top companies/founders to return. Defaults to 10.
+        @return: List of top N founders and their companies sorted by team size.
+        """
+        spark = self.spark
+
         # Subscribe to Kafka topics for companies and founders
         companies_df = self.subscribeToKafkaTopic("companies")
         founders_df = self.subscribeToKafkaTopic("founders")
 
+        if companies_df is None or founders_df is None:
+            print("Failed to subscribe to one or more Kafka topics.")
+            return None
+
         # Cast teamSize to integer in companies DataFrame
         companies_df = companies_df.withColumn("teamSize", companies_df["teamSize"].cast("int"))
-
-        # Write the streaming DataFrames to parquet sinks
-        query_companies = self.writeCompaniesStream()
-        query_founders = self.writeFoundersStream() 
-
-
-        # Read the data back from the parquet sink after ensuring it's written
-        companies_df = self.spark.read.parquet("/tmp/companies")
-        founders_df = self.spark.read.parquet("/tmp/founders")
 
         # Filter acquired companies with valid team size
         filtered_companies_df = companies_df.filter((col("status") == "Acquired") & (col("teamSize").isNotNull())) \
                                             .select("name", col("teamSize").alias("teamSize"), "batch")
 
-        # Join the filtered companies DataFrame with founders DataFrame on top_company field
-        result_df = filtered_companies_df.join(founders_df, filtered_companies_df.name == founders_df["top_company"]) \
-                                        .select("first_name", "last_name", "top_company", "teamSize", "batch") \
-                                        .orderBy(col("teamSize").desc()) \
-                                        .limit(top_n)
+        # Join the filtered companies DataFrame with founders DataFrame on 'top_company' field
+        result_df = filtered_companies_df.join(
+            founders_df,
+            filtered_companies_df["name"] == founders_df["top_company"]
+        ).select(
+            "first_name", "last_name", "top_company", "teamSize", "batch"
+        ).orderBy(
+            col("teamSize").desc()
+        ).limit(top_n)
 
-        # Collect the result into a Pandas DataFrame for plotting
-        result_pd = result_df.toPandas()
+        # Write the result to an in-memory table (for testing purposes) using append mode
+        query = result_df.writeStream \
+            .format("memory") \
+            .queryName("top_founders_companies") \
+            .outputMode("append") \
+            .start()
 
-        # Plot the result using Plotly
+        # Wait for the stream to process some data (adjust time as needed)
+        query.awaitTermination(10)
+
+        # Query the in-memory table for results
+        sqlQuery = """
+                   SELECT * 
+                   FROM top_founders_companies
+                   ORDER BY teamSize DESC 
+                   LIMIT :top_n"""
+        result_static_df = spark.sql(sqlQuery, args={"top_n": top_n})
+
+        # Collect results into Pandas DataFrame for visualization
+        result_pd = result_static_df.toPandas()
+
+        # Plot using Plotly
         fig = px.bar(result_pd, x='top_company', y='teamSize', color='first_name', 
-                    title='Top N Most Successful Founders and Their Companies by Team Size')
+                    title=f'Top {top_n} Most Successful Founders and Their Companies by Team Size')  
+        fig.show()
 
-        # Get the directory of the current script and save the plot as an HTML file
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(script_dir, 'most_successful_founders_companies.html')
-        
-        fig.write_html(file_path)
-        print(f"Plot saved to {file_path}")
+        query.stop()
+        return result_static_df
 
-        # Stop the streaming queries after processing
-        query_companies.stop()
-        query_founders.stop()
 
-        return result_df
-
-    def writeCompaniesStream(self):
-        # Subscribe to Kafka topic for companies
-        companies_df = self.subscribeToKafkaTopic("companies")
-
-        # Cast teamSize to integer
-        companies_df = companies_df.withColumn("teamSize", companies_df["teamSize"].cast("int"))
-
-        # Write the streaming DataFrame to a parquet sink
-        query_companies = companies_df.writeStream \
-            .format("parquet") \
-            .option("path", "/tmp/companies") \
-            .option("checkpointLocation", "/tmp/checkpoints/companies") \
-            .outputMode("append") \
-            .start()
-
-        # Wait for the streaming query to initialize
-        query_companies.awaitTermination(10)
-
-        return query_companies
-
-    def writeFoundersStream(self):
-        # Subscribe to Kafka topic for founders
-        founders_df = self.subscribeToKafkaTopic("founders")
-
-        # Write the streaming DataFrame to a parquet sink
-        query_founders = founders_df.writeStream \
-            .format("parquet") \
-            .option("path", "/tmp/founders") \
-            .option("checkpointLocation", "/tmp/checkpoints/founders") \
-            .outputMode("append") \
-            .start()
-
-        # Wait for the streaming query to initialize
-        query_founders.awaitTermination(10)
-
-        return query_founders

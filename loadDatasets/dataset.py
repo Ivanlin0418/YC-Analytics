@@ -2,7 +2,7 @@ import pandas as pd
 from confluent_kafka import Producer
 
 class Dataset:
-    def __init__(self, name: str, df: pd.DataFrame):
+    def __init__(self, name: str, df: pd.DataFrame, ):
         self._name = name
         self._df = df
 
@@ -17,6 +17,7 @@ class Dataset:
     def set_df(self, df: pd.DataFrame) -> None:
         """Sets a new DataFrame for the dataset."""
         self._df = df
+
 
     def set_name(self, name: str) -> None:
         """Sets a new name for the dataset."""

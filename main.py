@@ -8,21 +8,21 @@ from dataAnalytics import DataAnalytics
 def main():
     # Initialize the database loader
     loader = DatabaseLoader()
-    loader.load_companies() 
-    # loader.load_industries()
-    loader.load_founders()
-    # loader.load_prior_companies()
-    # loader.load_regions()
-    # loader.load_schools()
-    # loader.load_tags()
+    loader.loadCompanies() 
+    loader.loadIndustries()
+    loader.loadFounders()
+    loader.loadPriorCompanies()
+    loader.loadRegions()
+    loader.loadSchools()
+    loader.loadTags()
 
     dataAnalytics = DataAnalytics()
     # print (dataAnalytics.getMostSuccessfulCompaniesFromKafka())
 
     # print (dataAnalytics.getMostSuccessfulFoundersFromKafka())
+    # print (dataAnalytics.getKafkaTopicList())
     # print (dataAnalytics.getMostSuccessfulCompaniesFromKafka())
     print (dataAnalytics.getMostSuccessFoundersAndTheirCompaniesFromKafka())
-    # print (dataAnalytics.getMostSuccessfulCompaniesWithFoundersFromKafka())
 
 
 if __name__ == "__main__":
