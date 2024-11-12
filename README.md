@@ -1,4 +1,4 @@
-# YCombinator Companies Analysis
+# YCombinatroix
 
 This project analyzes YCombinator companies to identify common characteristics and trends. It utilizes datasets of companies, founders, industries, and more, and processes data using Kafka for real-time streaming.
 
